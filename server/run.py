@@ -14,8 +14,13 @@ class MyHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         path = os.path.join(ROOT, self.path[1:])
         if os.path.isdir(path): # if no file specified, index.html assigned. 
-            path = os.path.join(path, 'src/index.html')
-        if os.path.isfile(path):
+            path = os.path.join(path, 'index.html')
+            print(path)
+        if path == './index.html': # redirect to src/index.html
+            self.send_response(302)
+            self.send_header('Location', f'/src/index.html')
+            self.end_headers()
+        elif os.path.isfile(path):
             self.send_response(200)
             with open(path, 'rb') as f: 
                 data = f.read()
@@ -25,14 +30,6 @@ class MyHandler(BaseHTTPRequestHandler):
             self.wfile.write(data)
         else:
             self.send_error(404)
-
-    # def do_OPTIONS(self):
-    #     self.send_response(200, "ok")
-    #     self.send_header('Access-Control-Allow-Origin', '*')
-    #     self.send_header('Access-Control-Allow-Methods', 'GET, OPTIONS')
-    #     self.send_header("Access-Control-Allow-Headers", "X-Requested-With")
-    #     self.send_header("Access-Control-Allow-Headers", "Content-Type")
-    #     self.end_headers()
 
 if sys.argv[1:]:
     port = int(sys.argv[1])
