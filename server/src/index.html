@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Text Generator</title>
+        <meta charset="UTF-8"/>
+        <!-- <meta http-equiv="CACHE-CONTROL" content="NO-CACHE"/> -->
+        <link rel=stylesheet type="text/css" href="main.css">
+    </head>
+    <body>
+        <div id="app">
+            <div id="tab">
+                <button id="uncond-tab" class="tab-bn tab-bn-active">uncond</button>
+                <button id="img2img-tab" class="tab-bn">img2img</button>
+            </div>
+            <table id="images-table">
+                <tr id="images-table-row">
+                    <td class="image-container">
+                        <canvas id="canvas" width="300" height="300"></canvas>
+                    </td>
+                    <td class="image-container" style="display:none">
+                        <canvas id="ref-img" width="300" height="300"></canvas>
+                    </td>
+                </tr>
+            </table>
+            <div class="toolbar-container">
+                <div class="toolbar-column-container">
+                    <div class="tool-container">
+                        <span>Progress: </span> <progress id="progressbar" value="0" min="0" max="20"> 0% </progress>
+                    </div>
+                    <div class="tool-container">
+                        <span>Steps: </span> <input id="steps-slide" type="range", min="1", max="30", value="6"/> 
+                        <input id="steps-slide-display" type="number" size="4" value="6" min="1", max="30"/>
+                    </div>
+                    <div class="tool-container">
+                        <span>Height: </span> <input id="height-slide" type="range", min="8", max="80", step="8", value="48"/>
+                        <input id="height-slide-display" type="number" size="4" value="48" min="8", max="80", step="8"/>
+                    </div>
+                    <div class="tool-container">
+                        <span>Width: </span> <input id="width-slide" type="range", min="8", max="80", step="8", value="48"/>
+                        <input id="width-slide-display" type="number" size="4" value="48" min="8", max="80", step="8"/>
+                    </div>
+                    <div class="tool-container">
+                        <input type="radio" id="radio-cpu" name="device" value="cpu" checked> cpu
+                        <input type="radio" id="radio-gpu" name="device" value="webgl"> gpu
+                    </div>
+                    <div class="tool-container">
+                        <button id="generate-bn" disabled >Generate</button> &nbsp; 
+                        <button id="reload-model-bn">Reload Model</button>
+                    </div>
+                </div>
+                <div class="toolbar-column-container">
+                    <div class="tool-container">
+                        Upload image: <input type="file" id="upload-ref-img">
+                    </div>
+                    <div class="tool-container">
+                        <span>Line width: </span> <input id="line-width-slide" type="range", min="1", max="50", step="1", value="15"/>
+                        <input id="line-width-slide-display" type="number" size="4" value="15" min="1", max="50", step="1"/>
+                    </div>
+                    <div class="tool-container">
+                        <input type="radio" id="radio-pen" name="pen-eraser" value="pen" checked> pen
+                        <input type="radio" id="radio-eraser" name="pen-eraser" value="eraser"> eraser
+                        &nbsp; <button id="reset-ref-img-bn">Reset Image</button>
+                    </div>
+                    <div class="tool-container">
+                        <span>Guidance ratio: </span> <input id="ref-guide-slide" type="range", min="0", max="1", step="0.01", value="0.75"/>
+                        <input id="ref-guide-slide-display" type="number" size="4" value="0.75" min="0", max="1", step="0.01"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+    </body>
+    <script src="utils.js"></script>
+    <script src="draw.js"></script>
+    <script src="dom.js"></script>
+    <script src="index.js"></script>
+</html>
