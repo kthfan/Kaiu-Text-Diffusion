@@ -52,9 +52,6 @@ function imshow(canvas, tensor) {
 		document.body.appendChild(canvas);
 	}
     tensor = tf.clone(tensor);
-    let min = tf.min(tensor, [0, 1], true);
-    let max = tf.max(tensor, [0, 1], true);
-    tensor = tensor.sub(min).div(max.sub(min));
 
     canvas.width = tensor.shape[0];
     canvas.height = tensor.shape[1];
@@ -82,9 +79,6 @@ function applyGaussianBlur(x, kernelSize, sigma){
 
 function imshowGif(imgElem, tensor, delay=100, workers=4, callback=null){
     tensor = tf.clone(tensor);
-    let min = tf.min(tensor, [1, 2], true);
-    let max = tf.max(tensor, [1, 2], true);
-    tensor = tensor.sub(min).div(max.sub(min));
 
     imgElem.width = tensor.shape[2];
     imgElem.height = tensor.shape[1];
