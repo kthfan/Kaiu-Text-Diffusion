@@ -345,6 +345,7 @@ bindEventListenerOfElements([widthNumberElem, widthSlideElem], 'input', evt => {
 });
 bindEventListenerOfElements([lineWidthNumberElem, lineWidthSlideElem], 'input', evt => {
     refImgDraw.lineWidth = lineWidthSlideElem.value;
+    trgImgDraw.lineWidth = lineWidthSlideElem.value;
 });
 bindEventListenerOfElements([refGuideNumberElem, refGuideSlideElem], 'input');
 bindEventListenerOfElements([fontSizeNumberElem, fontSizeSlideElem], 'input');
