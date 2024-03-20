@@ -13,7 +13,10 @@ function generateImageUncond(height, width, steps, callback){
                         tf.randomNormal([1, height, width, 1]),
                         callback,
                         steps);
-        genImg = genImg.squeeze(0).squeeze(-1);
+        // let genImg = sampleOdeManuel(globalObj.unet, 
+        //                     tf.randomNormal([1, height, width, 1]),
+        //                     38.6546,
+        //                     steps);
         genImg = genImg.mul(0.1850).add(0.0438);
         genImg = tf.clipByValue(genImg, 0, 1);
         return genImg;
@@ -34,14 +37,36 @@ function generateImageImg2Img(refImg, height, width, steps, guideRatio, callback
                         callback,
                         steps,
                         guideRatio);
-        // let genImg = lowPassFilter(refImg, 4);
-        // let genImg = refImg;
-        genImg = genImg.squeeze(0).squeeze(-1);
         genImg = genImg.mul(0.1850).add(0.0438);
         genImg = tf.clipByValue(genImg, 0, 1);
         return genImg;
     });
     return genImg;
+}
+
+function generateImageTransition(srcImg, trgImg, height, width, steps, n, callback){
+    srcImg = tf.tensor(srcImg).expandDims(0);
+    trgImg = tf.tensor(trgImg).expandDims(0);
+    srcImg = applyGaussianBlur(srcImg, 5, 2);
+    trgImg = applyGaussianBlur(trgImg, 5, 2);
+    srcImg = tf.image.resizeBilinear(srcImg, [height, width]);
+    trgImg = tf.image.resizeBilinear(trgImg, [height, width]);
+    srcImg = srcImg.sub(0.0438).div(0.1850);
+    trgImg = trgImg.sub(0.0438).div(0.1850);
+
+    let genImgs = tf.tidy(() => {
+        let xList = qSamplePair(srcImg, trgImg, n);
+        let genImgs = pSamplePair(globalObj.unet, 
+                                 xList,
+                                 callback,
+                                 steps,
+                                 n);
+        genImgs = tf.concat(genImgs, 0);
+        genImgs = genImgs.mul(0.1850).add(0.0438);
+        genImgs = tf.clipByValue(genImgs, 0, 1);
+        return genImgs;
+    });
+    return genImgs;
 }
 
 onmessage = function(evt) {
@@ -78,11 +103,14 @@ onmessage = function(evt) {
                          status: 0,
                          currentStep: i});
         }
+
         let genImg;
         if (evt.data.mode === 'img2img'){
             genImg = generateImageImg2Img(evt.data.refImg, evt.data.height, evt.data.width, evt.data.steps, 
                                           evt.data.guideRatio, callback);
-        } else {
+        } else if (evt.data.mode === 'transition') {
+            genImg = generateImageTransition(evt.data.srcImg, evt.data.trgImg, evt.data.height, evt.data.width, evt.data.steps, evt.data.frames, callback);
+        }else {
             genImg = generateImageUncond(evt.data.height, evt.data.width, evt.data.steps, callback);
         }
         

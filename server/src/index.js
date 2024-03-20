@@ -11,11 +11,11 @@ let globalObj = {};
 
 async function main(){
 	Promise.all([
-		load_js("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js")
+		loadJS("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js")
 	])
-	.then(() => load_js("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@latest/dist/tfjs-vis.umd.min.js"))
-	.then(() => load_js("modules.js"))
-	.then(() => load_js("sampling.js"))
+	.then(() => loadJS("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@latest/dist/tfjs-vis.umd.min.js"))
+	.then(() => loadJS("modules.js"))
+	.then(() => loadJS("sampling.js"))
 	.then(() => {
 		// tf.setBackend('wasm');
 		tf.setBackend('cpu');

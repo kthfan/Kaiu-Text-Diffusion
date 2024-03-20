@@ -3,7 +3,9 @@ const MAX_CANVAS_SIZE = 300;
 
 // let imageContainerElem = document.getElementById('image-container');
 let canvasElem = document.getElementById('canvas');
+let gifDisplayerElem = document.getElementById('gif-displayer');
 let refImgElem = document.getElementById('ref-img');
+let trgImgElem = document.getElementById('trg-img');
 let imgTableRowElem = document.getElementById('images-table-row')
 let progressbarElem = document.getElementById('progressbar');
 let stepsSlideElem = document.getElementById('steps-slide');
@@ -11,12 +13,16 @@ let heightSlideElem = document.getElementById('height-slide');
 let widthSlideElem = document.getElementById('width-slide');
 let lineWidthSlideElem = document.getElementById('line-width-slide');
 let refGuideSlideElem = document.getElementById('ref-guide-slide');
+let fontSizeSlideElem = document.getElementById('font-size-slide');
+let gifDurationSlideElem = document.getElementById('gif-duration-slide');
+let fpsSlideElem = document.getElementById('fps-slide');
 
 let radioCpuElem = document.getElementById('radio-cpu');
 let radioGpuElem = document.getElementById('radio-gpu');
 let radioPenElem = document.getElementById('radio-pen');
 let radioEraserElem = document.getElementById('radio-eraser');
 let generateBnElem = document.getElementById('generate-bn');
+let downloadBnElem = document.getElementById('download-bn');
 let reloadModelBnElem = document.getElementById('reload-model-bn');
 let resetRefImgBnElem = document.getElementById('reset-ref-img-bn');
 let uploadRefImgFileElem = document.getElementById('upload-ref-img');
@@ -26,35 +32,50 @@ let heightNumberElem = document.getElementById('height-slide-display');
 let widthNumberElem = document.getElementById('width-slide-display');
 let lineWidthNumberElem = document.getElementById('line-width-slide-display');
 let refGuideNumberElem = document.getElementById('ref-guide-slide-display');
+let fontSizeNumberElem = document.getElementById('font-size-slide-display');
+let gifDurationNumberElem = document.getElementById('gif-duration-slide-display');
+let fpsNumberElem = document.getElementById('fps-slide-display');
+
+let srcInputElem = document.getElementById('src-input');
+let trgInputElem = document.getElementById('trg-input');
 
 let uncondTabElem = document.getElementById('uncond-tab');
 let img2imgTabElem = document.getElementById('img2img-tab');
-let tabElems = [uncondTabElem, img2imgTabElem];
+let transitionTabElem = document.getElementById('transition-tab');
+let tabElems = [uncondTabElem, img2imgTabElem, transitionTabElem];
 let canvasElemList = Array.from(imgTableRowElem.children).map(e => e.children[0]);
 let refImgDraw = new DrawableCanvas(refImgElem);
-refImgDraw.enable();
+let trgImgDraw = new DrawableCanvas(trgImgElem);
 
-adjustCanvasShape(canvasElemList, 48, 48);
 
 function initializeDOM(){
     generateBnElem.disabled = true;
+    adjustCanvasShape(canvasElemList, 48, 48);
+    refImgDraw.enable();
+    trgImgDraw.enable();
 }
 
 function advancedImageShow(image){
     image = tf.tensor(image);
-    let [height, width] = image.shape;
+    let height = image.shape[1];
+    let width = image.shape[2];
     
     if (height < width){
-        height = height / width * MAX_CANVAS_SIZE;
+        height = Math.round(height / width * MAX_CANVAS_SIZE);
         width = MAX_CANVAS_SIZE;
     } else {
-        width = width / height * MAX_CANVAS_SIZE;
+        width = Math.round(width / height * MAX_CANVAS_SIZE);
         height = MAX_CANVAS_SIZE;
     }
-    image = tf.expandDims(image, 2);
+
     image = tf.image.resizeBilinear(image, [height, width]);
-    image = tf.squeeze(image, 2);
-    imshow(canvasElem, image.neg().add(1));
+    if (globalObj.diffusionMode == 'transition'){
+        image = image.squeeze(-1);
+        imshowGif(gifDisplayerElem, image.neg().add(1), 1000 * gifDurationSlideElem.value / image.shape[0]);
+    } else {
+        image = image.squeeze(0).squeeze(-1);
+        imshow(canvasElem, image.neg().add(1));
+    }
     image.dispose();
 }
 function adjustCanvasShape(canvasElemList, height, width){
@@ -74,14 +95,16 @@ function adjustCanvasShape(canvasElemList, height, width){
         canvasElem.height = height;
         let yMargin = Math.max(0, (MAX_CANVAS_SIZE - height) / 2);
         let xMargin = Math.max(0, (MAX_CANVAS_SIZE - width) / 2);
-        // console.log(yMargin, xMargin);
+
         canvasElem.style.marginTop = yMargin.toString() + "px";
         canvasElem.style.marginBottom = yMargin.toString() + "px";
         canvasElem.style.marginLeft = xMargin.toString() + "px";
         canvasElem.style.marginRight = xMargin.toString() + "px";
-        ctx = canvasElem.getContext("2d");
-        ctx.fillStyle = 'white';
-        ctx.fillRect(0, 0, width, height);
+        if (canvasElem.tagName.toUpperCase() === 'CANVAS'){
+            ctx = canvasElem.getContext("2d");
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, width, height);
+        }
     }
 }
 
@@ -109,10 +132,11 @@ generateBnElem.addEventListener('click', evt => {
         return;
     }
     globalObj.isGenerating = true;
-    progressbarElem.max = stepsSlideElem.value;
     progressbarElem.value = 0;
 
     if (globalObj.diffusionMode == "img2img"){
+        progressbarElem.max = stepsSlideElem.value;
+
         tf.browser.fromPixelsAsync(refImgElem).then(img => {
             img = tf.tidy(() => {
                 img = tf.image.rgbToGrayscale(img);
@@ -124,19 +148,48 @@ generateBnElem.addEventListener('click', evt => {
             globalObj.worker.postMessage({
                 action: 'generate image',
                 mode: globalObj.diffusionMode,
-                steps: stepsSlideElem.value,
+                steps: Number.parseInt(stepsSlideElem.value),
                 height: Number.parseInt(heightSlideElem.value),
                 width: Number.parseInt(widthSlideElem.value),
                 refImg: imgArr.arraySync(),
                 guideRatio: refGuideNumberElem.value,
             });
-        });
-         
+        });  
+    } else if (globalObj.diffusionMode == "transition") {
+        progressbarElem.max = 2 * (stepsSlideElem.value - 1);
+        Promise.all([tf.browser.fromPixelsAsync(refImgElem), tf.browser.fromPixelsAsync(trgImgElem)])
+        .then(imgs => {
+            let [srcImg, trgImg] = imgs;
+            srcImg = tf.tidy(() => {
+                srcImg = tf.image.rgbToGrayscale(srcImg);
+                srcImg = srcImg.cast('float32').div(255).neg().add(1);
+                return srcImg;
+            });
+            trgImg = tf.tidy(() => {
+                trgImg = tf.image.rgbToGrayscale(trgImg);
+                trgImg = trgImg.cast('float32').div(255).neg().add(1);
+                return trgImg;
+            });
+            return [srcImg, trgImg];
+        }).then(imgsArr => {
+            let [srcArr, trgArr] = imgsArr;
+            globalObj.worker.postMessage({
+                action: 'generate image',
+                mode: globalObj.diffusionMode,
+                steps: Number.parseInt(stepsSlideElem.value),
+                frames: Math.round(fpsSlideElem.value * gifDurationSlideElem.value),
+                height: Number.parseInt(heightSlideElem.value),
+                width: Number.parseInt(widthSlideElem.value),
+                srcImg: srcArr.arraySync(),
+                trgImg: trgArr.arraySync(),
+            });
+        });  
     } else {
+        progressbarElem.max = stepsSlideElem.value;
         globalObj.worker.postMessage({
             action: 'generate image',
             mode: globalObj.diffusionMode,
-            steps: stepsSlideElem.value,
+            steps: Number.parseInt(stepsSlideElem.value),
             height: Number.parseInt(heightSlideElem.value),
             width: Number.parseInt(widthSlideElem.value),
         });
@@ -158,6 +211,21 @@ reloadModelBnElem.addEventListener('click', evt=>{
             path: 'model.json'
         });
     }
+});
+
+downloadBnElem.addEventListener('click', evt => {
+    let link = document.createElement("a");
+    
+    if(globalObj.diffusionMode === 'transition'){
+        link.download = 'image.gif';
+        link.href = gifDisplayerElem.src;
+    } else {
+        link.download = 'image.png';
+        link.href = canvasElem.toDataURL('image/png');
+    }
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 });
 
 radioCpuElem.addEventListener('change', () => {
@@ -192,7 +260,7 @@ radioEraserElem.addEventListener('change', () => {
 uncondTabElem.addEventListener('click', evt => {
     tabElems.forEach(elem => elem.classList.remove('tab-bn-active'));
     uncondTabElem.classList.add('tab-bn-active');
-    let enable = [true, false];
+    let enable = [true, false, false, false];
     for(let i=0; i<imgTableRowElem.childElementCount; i++){
         imgTableRowElem.children[i].style.display = enable[i] ? '' : 'none';
     }
@@ -202,11 +270,20 @@ uncondTabElem.addEventListener('click', evt => {
 img2imgTabElem.addEventListener('click', evt => {
     tabElems.forEach(elem => elem.classList.remove('tab-bn-active'));
     img2imgTabElem.classList.add('tab-bn-active');
-    let enable = [true, true];
+    let enable = [true, false, true, false];
     for(let i=0; i<imgTableRowElem.childElementCount; i++){
         imgTableRowElem.children[i].style.display = enable[i] ? '' : 'none';
     }
     globalObj.diffusionMode = 'img2img';
+});
+transitionTabElem.addEventListener('click', evt => {
+    tabElems.forEach(elem => elem.classList.remove('tab-bn-active'));
+    transitionTabElem.classList.add('tab-bn-active');
+    let enable = [false, true, true, true];
+    for(let i=0; i<imgTableRowElem.childElementCount; i++){
+        imgTableRowElem.children[i].style.display = enable[i] ? '' : 'none';
+    }
+    globalObj.diffusionMode = 'transition';
 });
 
 resetRefImgBnElem.addEventListener('click', evt => {
@@ -248,6 +325,17 @@ uploadRefImgFileElem.addEventListener('input', evt => {
     img.src = URL.createObjectURL(uploadRefImgFileElem.files[0]);
 });
 
+srcInputElem.addEventListener('input', evt => {
+    adjustCanvasShape([refImgElem], refImgElem.height, refImgElem.width);
+    let fontSize = fontSizeSlideElem.value / heightSlideElem.value * refImgElem.height;
+    drawTextOnCanvas(refImgElem, srcInputElem.value, fontSize, refImgElem.height, refImgElem.width);
+});
+trgInputElem.addEventListener('input', evt => {
+    adjustCanvasShape([trgImgElem], trgImgElem.height, trgImgElem.width);
+    let fontSize = fontSizeSlideElem.value / heightSlideElem.value * trgImgElem.height;
+    drawTextOnCanvas(trgImgElem, trgInputElem.value, fontSize, trgImgElem.height, trgImgElem.width);
+});
+
 bindEventListenerOfElements([stepsNumberElem, stepsSlideElem], 'input');
 bindEventListenerOfElements([heightNumberElem, heightSlideElem], 'input', evt => {
     adjustCanvasShape(canvasElemList, Number.parseInt(heightSlideElem.value), Number.parseInt(widthSlideElem.value));
@@ -259,6 +347,9 @@ bindEventListenerOfElements([lineWidthNumberElem, lineWidthSlideElem], 'input', 
     refImgDraw.lineWidth = lineWidthSlideElem.value;
 });
 bindEventListenerOfElements([refGuideNumberElem, refGuideSlideElem], 'input');
+bindEventListenerOfElements([fontSizeNumberElem, fontSizeSlideElem], 'input');
+bindEventListenerOfElements([gifDurationNumberElem, gifDurationSlideElem], 'input');
+bindEventListenerOfElements([fpsNumberElem, fpsSlideElem], 'input');
 
 
 initializeDOM();
