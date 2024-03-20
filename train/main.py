@@ -16,7 +16,7 @@ def parse_args():
     parser.add_argument('--batch-size', type=int, default=8)
     parser.add_argument('--image-size', type=int, default=48)
     parser.add_argument('--lr', type=float, default=1e-3)
-    parser.add_argument('--weight-decay', type=float, default=0)
+    parser.add_argument('--weight-decay', type=float, default=1e-6)
     parser.add_argument('--epochs', type=int, default=10)
     parser.add_argument('--ttf-path', type=str, default='fonts/kaiu.ttf', help='Path of ttf font file.')
     parser.add_argument('--workers', type=int, default=0)
@@ -31,7 +31,7 @@ def parse_args():
 
 def main():
     args = parse_args()
-    
+
     img_transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize(mean=0.0438, std=0.1850)
@@ -48,7 +48,7 @@ def main():
             drop_last=True)
     test_loader = torch.utils.data.DataLoader(
             dataset,
-            sampler=torch.utils.data.RandomSampler(dataset, replacement=True, num_samples=1000),
+            sampler=torch.utils.data.RandomSampler(dataset, replacement=True, num_samples=100),
             batch_size=args.batch_size,
             num_workers=args.workers,
             drop_last=True)

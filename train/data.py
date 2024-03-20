@@ -9,12 +9,10 @@ class ChineseFontDataset(torch.utils.data.Dataset):
                  ttf_path, 
                  font_size=24, 
                  image_size=(32, 32), 
-                 brightness_range=(220, 255),
                  transform=None):
         self.ttf_path = ttf_path
         self.font_size = font_size
         self.image_size = image_size
-        self.brightness_range = brightness_range
         self.transform = transform
         
         self.font = ImageFont.truetype(font=self.ttf_path, size=self.font_size)
@@ -23,10 +21,9 @@ class ChineseFontDataset(torch.utils.data.Dataset):
     def text_to_image(self, text):
         img = Image.new(size=self.image_size, mode='L')
         draw = ImageDraw.Draw(img)
-        pos = (random.randint(0, self.image_size[0] - self.font_size), 
-               random.randint(0, self.image_size[1] - self.font_size))
-        brightness = random.randint(*self.brightness_range)
-        draw.text(pos, text, brightness, font=self.font)
+        pos = ((self.image_size[0] - self.font_size) / 2, 
+               (self.image_size[1] - self.font_size) / 2)
+        draw.text(pos, text, 255, font=self.font)
         return img
     
     def __getitem__(self, idx):
