@@ -71,7 +71,9 @@ function advancedImageShow(image){
     image = tf.image.resizeBilinear(image, [height, width]);
     if (globalObj.diffusionMode == 'transition'){
         image = image.squeeze(-1);
-        imshowGif(gifDisplayerElem, image.neg().add(1), 1000 * gifDurationSlideElem.value / image.shape[0]);
+        imshowGif(gifDisplayerElem, image.neg().add(1), 1000 * gifDurationSlideElem.value / image.shape[0], 4, p => {
+            progressbarElem.value = image.shape[0] + p * 5;
+        });
     } else {
         image = image.squeeze(0).squeeze(-1);
         imshow(canvasElem, image.neg().add(1));
@@ -156,7 +158,8 @@ generateBnElem.addEventListener('click', evt => {
             });
         });  
     } else if (globalObj.diffusionMode == "transition") {
-        progressbarElem.max = 2 * (stepsSlideElem.value - 1);
+        let nFrames = Math.ceil((fpsSlideElem.value * gifDurationSlideElem.value) / 2);
+        progressbarElem.max = 2 * nFrames + 5;
         Promise.all([tf.browser.fromPixelsAsync(refImgElem), tf.browser.fromPixelsAsync(trgImgElem)])
         .then(imgs => {
             let [srcImg, trgImg] = imgs;
@@ -177,7 +180,7 @@ generateBnElem.addEventListener('click', evt => {
                 action: 'generate image',
                 mode: globalObj.diffusionMode,
                 steps: Number.parseInt(stepsSlideElem.value),
-                frames: Math.round(fpsSlideElem.value * gifDurationSlideElem.value),
+                frames: nFrames,
                 height: Number.parseInt(heightSlideElem.value),
                 width: Number.parseInt(widthSlideElem.value),
                 srcImg: srcArr.arraySync(),

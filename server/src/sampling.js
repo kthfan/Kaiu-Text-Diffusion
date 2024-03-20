@@ -37,13 +37,13 @@ function sampleEulerAncestralManual(model, x, sigmaMax, callback, steps=20, num_
 	if(callback === undefined)
 		callback = () => {};
 	let tMax = sigmaToT(tf.tensor(sigmaMax), num_timesteps, beta_d, beta_min);
-	tMax = Math.ceil(tMax.arraySync());
+	tMax = tMax.arraySync();
     steps = Math.ceil(steps / (num_timesteps - 1) * tMax);
-	if (steps <= 0 || tMax - 1 <= 0) {
+	if (steps <= 0 || tMax <= 0) {
 		return x;
 	}
 	
-    let tList = tf.linspace(tMax - 1, 1, steps);
+    let tList = tf.linspace(tMax, 1, steps);
 	let sigmas = tToSigma(tList, num_timesteps, beta_d, beta_min);
 	sigmas = tf.concat([sigmas, tf.zeros([1])], 0);
 	sigmas = sigmas.arraySync();
@@ -140,13 +140,13 @@ function sampleOdeManuel(model, x, sigmaMax, callback, steps=20, num_timesteps=1
 	if(callback === undefined)
 		callback = () => {};
 	let tMax = sigmaToT(tf.tensor(sigmaMax), num_timesteps, beta_d, beta_min);
-	tMax = Math.ceil(tMax.arraySync());
+	tMax = tMax.arraySync();
     steps = Math.ceil(steps / (num_timesteps - 1) * tMax);
-	if (steps <= 0) {
+	if (steps <= 0 || tMax <= 0) {
 		return x;
 	}
 	
-    let tList = tf.linspace(tMax - 1, 1, steps);
+    let tList = tf.linspace(tMax, 1, steps);
     let sigmas = tToSigma(tList, num_timesteps, beta_d, beta_min);
 	sigmas = tf.concat([sigmas, tf.zeros([1])], 0);
 	sigmas = sigmas.arraySync();

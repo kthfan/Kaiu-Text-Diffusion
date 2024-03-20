@@ -80,7 +80,7 @@ function applyGaussianBlur(x, kernelSize, sigma){
 	return x;
 }
 
-function imshowGif(imgElem, tensor, delay=100, workers=4){
+function imshowGif(imgElem, tensor, delay=100, workers=4, callback=null){
     tensor = tf.clone(tensor);
     let min = tf.min(tensor, [1, 2], true);
     let max = tf.max(tensor, [1, 2], true);
@@ -99,6 +99,9 @@ function imshowGif(imgElem, tensor, delay=100, workers=4){
 	gif.on('finished', blob => {
 		imgElem.src = URL.createObjectURL(blob);
 	});
+	if (callback){
+		gif.on('progress', callback);
+	}
 	let canvas = document.createElement('canvas');
 	let ctx = canvas.getContext('2d');
 	for(let i=0; i < tensor.shape[0]; i++){
