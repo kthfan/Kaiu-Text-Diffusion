@@ -99,7 +99,7 @@ function sampleEulerAncestralWithILVR(model, x, ref, callback, steps=20, guideRa
 			let dt = sigma_down - sigma;
 			x = x.add(d.mul(dt));
 			if(sigma_next > 0){
-				x = x.add(tf.randomNormal(x.shape).mul((1 - guideRatio**0.5) * sigma_up));
+				x = x.add(tf.randomNormal(x.shape).mul((1 - guideRatio**2)**0.5 * sigma_up));
 
 				// ILVER
 				let ref_t = ref.add(tf.randomNormal(x.shape).mul(sigma_next));
