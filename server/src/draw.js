@@ -30,25 +30,40 @@ class DrawableCanvas{
     }
 
     enable(){
+        this.canvas.addEventListener("touchstart", this._lambdaFuncs[0], false);
+        this.canvas.addEventListener("touchmove", this._lambdaFuncs[1], false);
+        document.documentElement.addEventListener("touchend", this._lambdaFuncs[2], false);
+
         this.canvas.addEventListener("mousedown", this._lambdaFuncs[0], false);
         this.canvas.addEventListener("mousemove", this._lambdaFuncs[1], false);
-        this.canvas.addEventListener("mouseup", this._lambdaFuncs[1], false);
         document.documentElement.addEventListener("mouseup", this._lambdaFuncs[2], false);
     }
 
     disable(){
+        this.canvas.removeEventListener("touchstart", this._lambdaFuncs[0], false);
+        this.canvas.removeEventListener("touchmove", this._lambdaFuncs[1], false);
+        document.documentElement.removeEventListener("touchend", this._lambdaFuncs[2], false);
+
         this.canvas.removeEventListener("mousedown", this._lambdaFuncs[0], false);
         this.canvas.removeEventListener("mousemove", this._lambdaFuncs[1], false);
-        this.canvas.removeEventListener("mouseup", this._lambdaFuncs[1], false);
         document.documentElement.removeEventListener("mouseup", this._lambdaFuncs[2], false);
     }
 
     _start(evt){
         this._drawFlag = true;
         this._currPosition = this._getCurrentPosition(evt);
+        evt.preventDefault();
     }
 
     _end(evt){
+        if(this._drawFlag){
+            this._draw(
+                this._currPosition[0],
+                this._currPosition[1],
+                this._currPosition[0],
+                this._currPosition[1]
+            );
+        }
         this._drawFlag = false;
         this._prevPosition = undefined;
         this._currPosition = undefined;
@@ -63,6 +78,7 @@ class DrawableCanvas{
                 this._currPosition[0],
                 this._currPosition[1]
             );
+            evt.preventDefault();
         }
     }
 
@@ -85,8 +101,21 @@ class DrawableCanvas{
         }
         dx -= window.scrollX;
         dy -= window.scrollY;
-        let x = evt.clientX - dx;
-        let y = evt.clientY - dy;
+
+        let clientX, clientY;
+        if(evt.type.substr(0, 5) == "touch"){
+            if (evt.targetTouches.length > 0){
+                clientX = evt.targetTouches[0].clientX;
+                clientY = evt.targetTouches[0].clientY;
+            } else {
+                throw new Error('No touch points.');
+            }
+        } else {
+            clientX = evt.clientX;
+            clientY = evt.clientY;
+        }
+        let x = clientX - dx;
+        let y = clientY - dy;
         return [x, y];
     }
 
