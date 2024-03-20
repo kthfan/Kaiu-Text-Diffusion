@@ -27,8 +27,14 @@
 
 .image-container canvas{
     display: block;
-    /* margin-left: auto;
-    margin-right: auto; */
+    border-style: inset;
+    border-width: 1px;
+}
+
+.image-container img{
+    display: block;
+    border-style:inset;
+    border-width: 1px;
 }
 
 .tool-container{
