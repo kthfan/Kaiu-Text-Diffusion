@@ -23,17 +23,17 @@ function ddpmDenoise(model, x, t, sigma){
 
 function getAncestralStep(sigma_from, sigma_to, eta=1.){
 	if (!eta)
-		return sigma_to, 0.;
+		return [sigma_to, 0.];
 	let sigma_up = Math.min(sigma_to, eta * (sigma_to ** 2 * (sigma_from ** 2 - sigma_to ** 2) / sigma_from ** 2) ** 0.5)
 	let sigma_down = (sigma_to ** 2 - sigma_up ** 2) ** 0.5
 	return [sigma_down, sigma_up];
 }
 
-function sampleEulerAncestral(model, x, callback, steps=20, num_timesteps=1000, beta_d=14.617, beta_min=0.0015, eta=1.){
-	return sampleEulerAncestralManual(model, x.mul(38.6546), 38.6546, callback, steps, num_timesteps, beta_d, beta_min, eta);
+function sampleEulerAncestral(model, x, callback, steps=20, eta=1., num_timesteps=1000, beta_d=14.617, beta_min=0.0015){
+	return sampleEulerAncestralManual(model, x.mul(38.6546), 38.6546, callback, steps, eta, num_timesteps, beta_d, beta_min);
 }
 
-function sampleEulerAncestralManual(model, x, sigmaMax, callback, steps=20, num_timesteps=1000, beta_d=14.617, beta_min=0.0015, eta=1.){
+function sampleEulerAncestralManual(model, x, sigmaMax, callback, steps=20, eta=1., num_timesteps=1000, beta_d=14.617, beta_min=0.0015){
 	if(callback === undefined)
 		callback = () => {};
 	let tMax = sigmaToT(tf.tensor(sigmaMax), num_timesteps, beta_d, beta_min);
@@ -76,8 +76,8 @@ function lowPassFilter(x, D){
 	x = tf.image.resizeBilinear(x, [h, w]);
 	return x;
 }
-function sampleEulerAncestralWithILVR(model, x, ref, callback, steps=20, guideRatio=0.5, num_timesteps=1000, 
-									  beta_d=14.617, beta_min=0.0015, eta=1., D=2){
+function sampleEulerAncestralWithILVR(model, x, ref, callback, steps=20, guideRatio=0.5, eta=1., num_timesteps=1000, 
+									  beta_d=14.617, beta_min=0.0015, D=2){
 	let t_list = tf.linspace(num_timesteps - 1, 1, steps);
 	let sigmas = tToSigma(t_list, num_timesteps, beta_d, beta_min);
 	sigmas = tf.concat([sigmas, tf.zeros([1])], 0);
@@ -115,11 +115,17 @@ function sampleEulerAncestralWithILVR(model, x, ref, callback, steps=20, guideRa
 }
 
 
-function qSamplePair(x1, x2, n=20, num_timesteps=1000, beta_d=14.617, beta_min=0.0015){
-    let sigmaMax = tToSigma(tf.tensor(num_timesteps - 1), num_timesteps, beta_d, beta_min).arraySync();
+function getSamplePairSigma(n=20, num_timesteps=1000, beta_d=14.617, beta_min=0.0015){
+	// let sigmaMax = tToSigma(tf.tensor(num_timesteps - 1), num_timesteps, beta_d, beta_min).arraySync();
     // let sigmas = tf.linspace(0, sigmaMax, n + 1);
 	let sigmas = tToSigma(tf.linspace(1, num_timesteps - 1, n - 1), num_timesteps, beta_d, beta_min);
-	sigmas = tf.concat([tf.zeros([1]), sigmas], 0)
+	sigmas = tf.concat([tf.zeros([1]), sigmas], 0);
+	return sigmas;
+}
+
+function qSamplePair(x1, x2, n=20, num_timesteps=1000, beta_d=14.617, beta_min=0.0015){
+    let sigmaMax = tToSigma(tf.tensor(num_timesteps - 1), num_timesteps, beta_d, beta_min).arraySync();
+	let sigmas = getSamplePairSigma(n, num_timesteps, beta_d, beta_min);
 	sigmas = sigmas.arraySync();
     let noise = tf.randomNormal(x1.shape);
 	let x1List = [];
@@ -136,41 +142,15 @@ function qSamplePair(x1, x2, n=20, num_timesteps=1000, beta_d=14.617, beta_min=0
     return x1List.concat(x2List);
 }
 
-function sampleOdeManuel(model, x, sigmaMax, callback, steps=20, num_timesteps=1000, beta_d=14.617, beta_min=0.0015){
-	if(callback === undefined)
-		callback = () => {};
-	let tMax = sigmaToT(tf.tensor(sigmaMax), num_timesteps, beta_d, beta_min);
-	tMax = tMax.arraySync();
-    steps = Math.ceil(steps / (num_timesteps - 1) * tMax);
-	if (steps <= 0 || tMax <= 0) {
-		return x;
-	}
-	
-    let tList = tf.linspace(tMax, 1, steps);
-    let sigmas = tToSigma(tList, num_timesteps, beta_d, beta_min);
-	sigmas = tf.concat([sigmas, tf.zeros([1])], 0);
-	sigmas = sigmas.arraySync();
-	tList = tList.arraySync();
-    for (let i=0; i < steps; i++){
-		x = tf.tidy(() => {
-			return ddpmDenoise(model, x, tList[i], sigmas[i]);
-		});
-	}
-    return x
-}
-
-function pSamplePair(model, xList, callback, steps=20, n=20, num_timesteps=1000, beta_d=14.617, beta_min=0.0015){
+function pSamplePair(model, xList, callback, steps=20, n=20, eta=1., num_timesteps=1000, beta_d=14.617, beta_min=0.0015){
 	let yList = [];
-    // let sigmaMax = tToSigma(tf.tensor(num_timesteps - 1), num_timesteps, beta_d, beta_min).arraySync();
-    // let sigmas = tf.linspace(0, sigmaMax, n);
-	let sigmas = tToSigma(tf.linspace(1, num_timesteps - 1, n - 1), num_timesteps, beta_d, beta_min);
-    sigmas = tf.concat([tf.zeros([1]), sigmas], 0);
+	let sigmas = getSamplePairSigma(n, num_timesteps, beta_d, beta_min);
 	sigmas = tf.concat([sigmas, sigmas.reverse(0)], 0);
 	sigmas = sigmas.arraySync();
 	
     for (let i=0; i < xList.length; i++){
 		callback(i);
-		let y = sampleEulerAncestralManual(model, xList[i], sigmas[i], undefined, steps, num_timesteps, beta_d, beta_min);
+		let y = sampleEulerAncestralManual(model, xList[i], sigmas[i], undefined, steps, eta, num_timesteps, beta_d, beta_min);
 		yList.push(y);
 	}
 	
