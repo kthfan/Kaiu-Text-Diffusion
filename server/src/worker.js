@@ -7,16 +7,13 @@ importScripts('sampling.js');
 
 let globalObj = {};
 
-function generateImageUncond(height, width, steps, callback){
+function generateImageUncond(height, width, steps, eta, callback){
     let genImg = tf.tidy(() => {
         let genImg = sampleEulerAncestral(globalObj.unet, 
                         tf.randomNormal([1, height, width, 1]),
                         callback,
-                        steps);
-        // let genImg = sampleOdeManuel(globalObj.unet, 
-        //                     tf.randomNormal([1, height, width, 1]),
-        //                     38.6546,
-        //                     steps);
+                        steps,
+                        eta);
         genImg = genImg.mul(0.1850).add(0.0438);
         genImg = tf.clipByValue(genImg, 0, 1);
         return genImg;
@@ -24,7 +21,7 @@ function generateImageUncond(height, width, steps, callback){
     return genImg;
 }
 
-function generateImageImg2Img(refImg, height, width, steps, guideRatio, callback){
+function generateImageImg2Img(refImg, height, width, steps, guideRatio, eta, callback){
     refImg = tf.tensor(refImg).expandDims(0);
     refImg = applyGaussianBlur(refImg, 5, 2);
     refImg = tf.image.resizeBilinear(refImg, [height, width]);
@@ -36,7 +33,8 @@ function generateImageImg2Img(refImg, height, width, steps, guideRatio, callback
                         refImg,
                         callback,
                         steps,
-                        guideRatio);
+                        guideRatio,
+                        eta);
         genImg = genImg.mul(0.1850).add(0.0438);
         genImg = tf.clipByValue(genImg, 0, 1);
         return genImg;
@@ -44,7 +42,7 @@ function generateImageImg2Img(refImg, height, width, steps, guideRatio, callback
     return genImg;
 }
 
-function generateImageTransition(srcImg, trgImg, height, width, steps, n, callback){
+function generateImageTransition(srcImg, trgImg, height, width, steps, n, eta, callback){
     srcImg = tf.tensor(srcImg).expandDims(0);
     trgImg = tf.tensor(trgImg).expandDims(0);
     srcImg = applyGaussianBlur(srcImg, 5, 2);
@@ -60,7 +58,8 @@ function generateImageTransition(srcImg, trgImg, height, width, steps, n, callba
                                  xList,
                                  callback,
                                  steps,
-                                 n);
+                                 n,
+                                 eta);
         genImgs = tf.concat(genImgs, 0);
         genImgs = genImgs.mul(0.1850).add(0.0438);
         genImgs = tf.clipByValue(genImgs, 0, 1);
@@ -107,11 +106,12 @@ onmessage = function(evt) {
         let genImg;
         if (evt.data.mode === 'img2img'){
             genImg = generateImageImg2Img(evt.data.refImg, evt.data.height, evt.data.width, evt.data.steps, 
-                                          evt.data.guideRatio, callback);
+                                          evt.data.guideRatio, evt.data.noiseScale, callback);
         } else if (evt.data.mode === 'transition') {
-            genImg = generateImageTransition(evt.data.srcImg, evt.data.trgImg, evt.data.height, evt.data.width, evt.data.steps, evt.data.frames, callback);
+            genImg = generateImageTransition(evt.data.srcImg, evt.data.trgImg, evt.data.height, evt.data.width, 
+                                             evt.data.steps, evt.data.frames, evt.data.noiseScale, callback);
         }else {
-            genImg = generateImageUncond(evt.data.height, evt.data.width, evt.data.steps, callback);
+            genImg = generateImageUncond(evt.data.height, evt.data.width, evt.data.steps, evt.data.noiseScale, callback);
         }
         
         postMessage({action: evt.data.action, 
