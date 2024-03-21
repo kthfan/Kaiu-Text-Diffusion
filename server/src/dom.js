@@ -11,6 +11,7 @@ let progressbarElem = document.getElementById('progressbar');
 let stepsSlideElem = document.getElementById('steps-slide');
 let heightSlideElem = document.getElementById('height-slide');
 let widthSlideElem = document.getElementById('width-slide');
+let noiseScaleSlideElem = document.getElementById('noise-scale-slide');
 let lineWidthSlideElem = document.getElementById('line-width-slide');
 let refGuideSlideElem = document.getElementById('ref-guide-slide');
 let fontSizeSlideElem = document.getElementById('font-size-slide');
@@ -30,6 +31,7 @@ let uploadRefImgFileElem = document.getElementById('upload-ref-img');
 let stepsNumberElem = document.getElementById('steps-slide-display');
 let heightNumberElem = document.getElementById('height-slide-display');
 let widthNumberElem = document.getElementById('width-slide-display');
+let noiseScaleNumberElem = document.getElementById('noise-scale-slide-display');
 let lineWidthNumberElem = document.getElementById('line-width-slide-display');
 let refGuideNumberElem = document.getElementById('ref-guide-slide-display');
 let fontSizeNumberElem = document.getElementById('font-size-slide-display');
@@ -154,7 +156,9 @@ generateBnElem.addEventListener('click', evt => {
                 height: Number.parseInt(heightSlideElem.value),
                 width: Number.parseInt(widthSlideElem.value),
                 refImg: imgArr.arraySync(),
-                guideRatio: refGuideNumberElem.value,
+                guideRatio: Number.parseFloat(refGuideNumberElem.value),
+                noiseScale: Math.max(Number.parseFloat(noiseScaleSlideElem.value), 
+                                     Number.parseFloat(refGuideNumberElem.value)),
             });
         });  
     } else if (globalObj.diffusionMode == "transition") {
@@ -185,6 +189,7 @@ generateBnElem.addEventListener('click', evt => {
                 width: Number.parseInt(widthSlideElem.value),
                 srcImg: srcArr.arraySync(),
                 trgImg: trgArr.arraySync(),
+                noiseScale: Number.parseFloat(noiseScaleSlideElem.value),
             });
         });  
     } else {
@@ -195,6 +200,7 @@ generateBnElem.addEventListener('click', evt => {
             steps: Number.parseInt(stepsSlideElem.value),
             height: Number.parseInt(heightSlideElem.value),
             width: Number.parseInt(widthSlideElem.value),
+            noiseScale: Number.parseFloat(noiseScaleSlideElem.value),
         });
     }
     
@@ -354,6 +360,6 @@ bindEventListenerOfElements([refGuideNumberElem, refGuideSlideElem], 'input');
 bindEventListenerOfElements([fontSizeNumberElem, fontSizeSlideElem], 'input');
 bindEventListenerOfElements([gifDurationNumberElem, gifDurationSlideElem], 'input');
 bindEventListenerOfElements([fpsNumberElem, fpsSlideElem], 'input');
-
+bindEventListenerOfElements([noiseScaleNumberElem, noiseScaleSlideElem], 'input');
 
 initializeDOM();
