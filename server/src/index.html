@@ -47,6 +47,10 @@
                         <input id="width-slide-display" type="number" size="4" value="48" min="8", max="480", step="8"/>
                     </div>
                     <div class="tool-container">
+                        <span>Noise scale: </span> <input id="noise-scale-slide" type="range", min="0", max="1", step="0.01", value="1"/>
+                        <input id="noise-scale-slide-display" type="number" size="4" value="1" min="0", max="1", step="0.01"/>
+                    </div>
+                    <div class="tool-container">
                         <input type="radio" id="radio-cpu" name="device" value="cpu" checked> cpu
                         <input type="radio" id="radio-gpu" name="device" value="webgl"> gpu
                     </div>
@@ -54,7 +58,6 @@
                         <button id="generate-bn" disabled >Generate</button> &nbsp; 
                         <button id="download-bn">Download</button> &nbsp; 
                         <button id="reload-model-bn">Reload Model</button> 
-                        
                     </div>
                 </div>
                 <div class="toolbar-column-container">
