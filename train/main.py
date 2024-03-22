@@ -20,13 +20,16 @@ def parse_args():
     parser.add_argument('--epochs', type=int, default=10)
     parser.add_argument('--ttf-path', type=str, default='fonts/kaiu.ttf', help='Path of ttf font file.')
     parser.add_argument('--workers', type=int, default=0)
-    parser.add_argument('--use-amp', type=bool, default=True)
-    parser.add_argument('--use-cuda', type=bool, default=True)
-    parser.add_argument('--use-ema', type=bool, default=False)
+    parser.add_argument('--use-amp', type=int, default=1)
+    parser.add_argument('--use-cuda', type=int, default=1)
+    parser.add_argument('--use-ema', type=int, default=0)
     parser.add_argument('--save-path', type=str, default='results/model.pt', help='The trained model will be saved.')
     parser.add_argument('--restart-path', type=str, default=None, help='The model will be restarted.')
 
     args = parser.parse_args()
+    arg.use_amp = bool(arg.use_amp)
+    arg.use_cuda = bool(arg.use_cuda)
+    arg.use_ema = bool(arg.use_ema)
     return args
 
 def main():
