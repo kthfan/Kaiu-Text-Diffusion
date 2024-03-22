@@ -10,7 +10,7 @@ See [Here](https://kthfan.github.io/text-generator).
 cd train/
 
 # Train the model.
-python train.py
+python train.py --epochs 1000 --use-ema 1
 
 # Convert weights to json format.
 python pt2json.py
