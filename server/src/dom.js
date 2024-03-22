@@ -257,11 +257,13 @@ radioGpuElem.addEventListener('change', () => {
 radioPenElem.addEventListener('change', () => {
     if (radioPenElem.checked){
         refImgDraw.lineColor = 'black';
+        trgImgDraw.lineColor = 'black';
     }
 });
 radioEraserElem.addEventListener('change', () => {
     if (radioEraserElem.checked){
         refImgDraw.lineColor = 'white';
+        trgImgDraw.lineColor = 'white';
     } 
 });
 
