@@ -1,6 +1,9 @@
 # Kaiu Text Diffusion 
 The diffusion model generates chinese character. 
 
+### Demo
+See the [Website](https://kthfan.github.io/text-generator).
+
 ### Usage
 
 ```bash
