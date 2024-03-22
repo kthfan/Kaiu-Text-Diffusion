@@ -1,5 +1,5 @@
 # Kaiu Text Diffusion 
-The diffusion model generates chinese character. 
+The diffusion model generates chinese characters. 
 
 ### Demo
 See [Here](https://kthfan.github.io/text-generator).
