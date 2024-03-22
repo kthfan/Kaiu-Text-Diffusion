@@ -2,7 +2,7 @@
 The diffusion model generates chinese character. 
 
 ### Demo
-See the [Website](https://kthfan.github.io/text-generator).
+See [Here](https://kthfan.github.io/text-generator).
 
 ### Usage
 
