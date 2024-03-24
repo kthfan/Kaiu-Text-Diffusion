@@ -27,13 +27,13 @@
 
 .image-container canvas{
     display: block;
-    border-style: inset;
+    border-style: solid;
     border-width: 1px;
 }
 
 .image-container img{
     display: block;
-    border-style:inset;
+    border-style: solid;
     border-width: 1px;
 }
 

@@ -1,36 +1,37 @@
 
 
 
-function tToSigma(t, num_timesteps=1000, beta_d=14.617, beta_min=0.0015){
-	t = t.div(num_timesteps - 1);
-	let sigma = tf.sqrt(tf.exp(t.pow(2).mul(beta_d / 2).add(t.mul(beta_min))).sub(1));
+function tToSigma(t, numTimesteps=1000, betaD=14.617, betaMin=0.0015){
+	t = t.div(numTimesteps - 1);
+	let sigma = tf.sqrt(tf.exp(t.pow(2).mul(betaD / 2).add(t.mul(betaMin))).sub(1));
 	return sigma;
 }
-function sigmaToT(sigma, num_timesteps=1000, beta_d=14.617, beta_min=0.0015){
-	let t = sigma.pow(2).add(1).log().mul(2 * beta_d).add(beta_min**2).sqrt().add(-beta_min).div(beta_d);
-    t = t.mul(num_timesteps - 1);
+function sigmaToT(sigma, numTimesteps=1000, betaD=14.617, betaMin=0.0015){
+	let t = sigma.pow(2).add(1).log().mul(2 * betaD).add(betaMin**2).sqrt().add(-betaMin).div(betaD);
+    t = t.mul(numTimesteps - 1);
 	return t;
 }
 
 function ddpmDenoise(model, x, t, sigma){
-	let c_out = - sigma;
-	let c_in = 1 / (sigma ** 2 + 1. ** 2) ** 0.5;
-	let s_in = tf.ones([x.shape[0]]);
-	let eps = model.apply([x.mul(c_in), s_in.mul(t)]);
-	let denoised = x.add(eps.mul(c_out));
+	let cOut = - sigma;
+	let cIn = 1 / (sigma ** 2 + 1. ** 2) ** 0.5;
+	let sIn = tf.ones([x.shape[0]]);
+	let eps = model.apply([x.mul(cIn), sIn.mul(t)]);
+	let denoised = x.add(eps.mul(cOut));
 	return denoised;
 }
 
-function getAncestralStep(sigma_from, sigma_to, eta=1.){
+function getAncestralStep(sigmaFrom, sigmaTo, eta=1.){
 	if (!eta)
-		return [sigma_to, 0.];
-	let sigma_up = Math.min(sigma_to, eta * (sigma_to ** 2 * (sigma_from ** 2 - sigma_to ** 2) / sigma_from ** 2) ** 0.5)
-	let sigma_down = (sigma_to ** 2 - sigma_up ** 2) ** 0.5
-	return [sigma_down, sigma_up];
+		return [sigmaTo, 0.];
+	let sigmaUp = Math.min(sigmaTo, eta * (sigmaTo ** 2 * (sigmaFrom ** 2 - sigmaTo ** 2) / sigmaFrom ** 2) ** 0.5)
+	let sigmaDown = (sigmaTo ** 2 - sigmaUp ** 2) ** 0.5
+	return [sigmaDown, sigmaUp];
 }
 
-function sampleEulerAncestral(model, x, callback, steps=20, eta=1., num_timesteps=1000, beta_d=14.617, beta_min=0.0015){
-	return sampleEulerAncestralManual(model, x.mul(38.6546), 38.6546, callback, steps, eta, num_timesteps, beta_d, beta_min);
+function sampleEulerAncestral(model, x, callback, steps=20, eta=1., numTimesteps=1000, betaD=14.617, betaMin=0.0015){
+	let sigmaMax = tToSigma(tf.tensor(numTimesteps - 1), numTimesteps, betaD, betaMin).arraySync();
+	return sampleEulerAncestralManual(model, x.mul(sigmaMax), sigmaMax, callback, steps, eta, numTimesteps, betaD, betaMin);
 }
 
 function sampleEulerAncestralManual(model, x, sigmaMax, callback, steps=20, eta=1., num_timesteps=1000, beta_d=14.617, beta_min=0.0015){
@@ -65,15 +66,14 @@ function sampleEulerAncestralManual(model, x, sigmaMax, callback, steps=20, eta=
 			return x;
 		});
 	}
-	return x
+	return x	
 }
 
 function lowPassFilter(x, D){
 	let h = x.shape[1];
 	let w = x.shape[2];
-	x = applyGaussianBlur(x, 3, 1);
-	x = tf.image.resizeBilinear(x, [Number.parseInt(h / D), Number.parseInt(w / D)]);
-	x = tf.image.resizeBilinear(x, [h, w]);
+	x = resizeBilinear(x, [Number.parseInt(h / D), Number.parseInt(w / D)], false, false, true);
+	x = resizeBilinear(x, [h, w]);
 	return x;
 }
 function sampleEulerAncestralWithILVR(model, x, ref, callback, steps=20, guideRatio=0.5, eta=1., num_timesteps=1000, 
@@ -121,7 +121,6 @@ function getSamplePairSigma(n=20, num_timesteps=1000, beta_d=14.617, beta_min=0.
 	
 	let tList = tf.linspace(0, 1, n);
 	let sigmas = tf.sqrt(tf.exp(tList.mul(Math.log(sigmaMax**2 + 1))).sub(1));
-
 	// let sigmas = tToSigma(tf.linspace(1, num_timesteps - 1, n - 1), num_timesteps, beta_d, beta_min);
 	// sigmas = tf.concat([tf.zeros([1]), sigmas], 0);
 	return sigmas;
@@ -134,7 +133,7 @@ function qSamplePair(x1, x2, n=20, num_timesteps=1000, beta_d=14.617, beta_min=0
     let noise = tf.randomNormal(x1.shape);
 	let x1List = [];
 	let x2List = [];
-    for(let i=0; i < n; i++){
+    for(let i=0; i < n - 1; i++){
         let sigma = sigmas[i];
         let alpha = 0.5 * sigma / sigmaMax;
         let _x1 = x1.mul(1 - alpha).add(x2.mul(alpha)).add(noise.mul(sigma));
@@ -142,6 +141,9 @@ function qSamplePair(x1, x2, n=20, num_timesteps=1000, beta_d=14.617, beta_min=0
         x1List.push(_x1);
         x2List.push(_x2);
 	}
+	let _xn = x1.mul(0.5).add(x2.mul(0.5)).add(noise.mul(sigmas[n - 1]));
+
+	x1List.push(_xn);
     x2List.reverse();
     return x1List.concat(x2List);
 }
@@ -149,7 +151,7 @@ function qSamplePair(x1, x2, n=20, num_timesteps=1000, beta_d=14.617, beta_min=0
 function pSamplePair(model, xList, callback, steps=20, n=20, eta=1., num_timesteps=1000, beta_d=14.617, beta_min=0.0015){
 	let yList = [];
 	let sigmas = getSamplePairSigma(n, num_timesteps, beta_d, beta_min);
-	sigmas = tf.concat([sigmas, sigmas.reverse(0)], 0);
+	sigmas = tf.concat([sigmas.slice([0], [n - 1]), sigmas.reverse(0)], 0);
 	sigmas = sigmas.arraySync();
 	
     for (let i=0; i < xList.length; i++){

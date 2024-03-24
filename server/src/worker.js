@@ -23,8 +23,7 @@ function generateImageUncond(height, width, steps, eta, callback){
 
 function generateImageImg2Img(refImg, height, width, steps, guideRatio, eta, callback){
     refImg = tf.tensor(refImg).expandDims(0);
-    refImg = applyGaussianBlur(refImg, 3, 1);
-    refImg = tf.image.resizeBilinear(refImg, [height, width]);
+    refImg = resizeBilinear(refImg, [height, width], false, false, true);
     refImg = refImg.sub(0.0438).div(0.1850);
 
     let genImg = tf.tidy(() => {
@@ -45,10 +44,8 @@ function generateImageImg2Img(refImg, height, width, steps, guideRatio, eta, cal
 function generateImageTransition(srcImg, trgImg, height, width, steps, n, eta, callback){
     srcImg = tf.tensor(srcImg).expandDims(0);
     trgImg = tf.tensor(trgImg).expandDims(0);
-    srcImg = applyGaussianBlur(srcImg, 3, 1);
-    trgImg = applyGaussianBlur(trgImg, 3, 1);
-    srcImg = tf.image.resizeBilinear(srcImg, [height, width]);
-    trgImg = tf.image.resizeBilinear(trgImg, [height, width]);
+    srcImg = resizeBilinear(srcImg, [height, width], false, false, true);
+    trgImg = resizeBilinear(trgImg, [height, width], false, false, true);
     srcImg = srcImg.sub(0.0438).div(0.1850);
     trgImg = trgImg.sub(0.0438).div(0.1850);
 

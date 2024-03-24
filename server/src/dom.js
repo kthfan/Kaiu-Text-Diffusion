@@ -162,8 +162,10 @@ generateBnElem.addEventListener('click', evt => {
             });
         });  
     } else if (globalObj.diffusionMode == "transition") {
+        // set progress bar
         let nFrames = Math.ceil((fpsSlideElem.value * gifDurationSlideElem.value) / 2);
-        progressbarElem.max = 2 * nFrames + 5;
+        progressbarElem.max = 2 * nFrames - 1 + 5;
+
         Promise.all([tf.browser.fromPixelsAsync(refImgElem), tf.browser.fromPixelsAsync(trgImgElem)])
         .then(imgs => {
             let [srcImg, trgImg] = imgs;

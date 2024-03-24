@@ -6,7 +6,7 @@ if(document.readyState === "complete" || document.readyState === "interactive") 
     document.addEventListener("DOMContentLoaded", main);
 }
 
-let globalObj = {};
+let globalObj = {diffusionMode: 'uncond'};
 
 
 async function main(){
@@ -23,7 +23,6 @@ async function main(){
 		
 		globalObj.unetPrepared = false;
 		globalObj.isGenerating = false;
-		globalObj.diffusionMode = 'uncond';
 		globalObj.worker = new Worker("worker.js");
 		reloadModelBnElem.click();
 
