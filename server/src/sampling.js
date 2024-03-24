@@ -119,7 +119,7 @@ function getSamplePairSigma(n=20, num_timesteps=1000, beta_d=14.617, beta_min=0.
 	let sigmaMax = tToSigma(tf.tensor(num_timesteps - 1), num_timesteps, beta_d, beta_min).arraySync();
     // let sigmas = tf.linspace(0, sigmaMax, n);
 	
-	let tList = tf.linspace(0, 1, n);
+	let tList = tf.linspace(5e-3, 1, n);
 	let sigmas = tf.sqrt(tf.exp(tList.mul(Math.log(sigmaMax**2 + 1))).sub(1));
 	// let sigmas = tToSigma(tf.linspace(1, num_timesteps - 1, n - 1), num_timesteps, beta_d, beta_min);
 	// sigmas = tf.concat([tf.zeros([1]), sigmas], 0);
