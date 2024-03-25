@@ -16,6 +16,7 @@ function generateImageUncond(height, width, steps, eta, callback){
                         eta);
         genImg = genImg.mul(0.1850).add(0.0438);
         genImg = tf.clipByValue(genImg, 0, 1);
+        genImg = genImg.sub(genImg.min([1, 2], true)).divNoNan(genImg.max([1, 2], true).sub(genImg.min([1, 2], true)));
         return genImg;
     });
     return genImg;
@@ -36,6 +37,7 @@ function generateImageImg2Img(refImg, height, width, steps, guideRatio, eta, cal
                         eta);
         genImg = genImg.mul(0.1850).add(0.0438);
         genImg = tf.clipByValue(genImg, 0, 1);
+        genImg = genImg.sub(genImg.min([1, 2], true)).divNoNan(genImg.max([1, 2], true).sub(genImg.min([1, 2], true)));
         return genImg;
     });
     return genImg;
@@ -60,6 +62,7 @@ function generateImageTransition(srcImg, trgImg, height, width, steps, n, eta, c
         genImgs = tf.concat(genImgs, 0);
         genImgs = genImgs.mul(0.1850).add(0.0438);
         genImgs = tf.clipByValue(genImgs, 0, 1);
+        genImgs = genImgs.sub(genImgs.min([1, 2], true)).divNoNan(genImgs.max([1, 2], true).sub(genImgs.min([1, 2], true)));
         return genImgs;
     });
     return genImgs;
