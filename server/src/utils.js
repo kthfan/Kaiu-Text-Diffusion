@@ -24,7 +24,7 @@ function createUNet(config){
 }
 
 function drawTextOnCanvas(canvas, text, fontSize, height, width, antialias=true){
-	const S = 2;
+	const S = Math.ceil(Math.max(2, 128 / height, 128 / width));
 	let ctx, canvas2;
 	if(antialias){ // draw on a larger canvas
 		fontSize *= S;
