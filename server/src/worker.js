@@ -1,5 +1,6 @@
 
 importScripts("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js");
+importScripts('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm/dist/tf-backend-wasm.js')
 // importScripts("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@latest/dist/tfjs-vis.umd.min.js");
 importScripts('utils.js');
 importScripts('modules.js');
@@ -85,41 +86,51 @@ onmessage = function(evt) {
 			use_attentions: [false, false, false, false]
 		};
         globalObj.unet = createUNet(minConfig);
-
+        
         let json = JSON.parse(evt.data.data);
         let weights = json.map(e => tf.tensor(e[1], e[0]));
         globalObj.unet.setWeights(weights);
 		postMessage({action: evt.data.action, message: "The weights is set.", status: 0});
 
     } else if (evt.data.action === "set backend"){
-        tf.setBackend(evt.data.backend);
-        postMessage({action: evt.data.action, 
-                     message: `The current backend is ${tf.getBackend()}.`, 
-                     status: Number.parseInt(evt.data.backend != tf.getBackend())});
+        try{
+            tf.setBackend(evt.data.backend);
+            postMessage({action: evt.data.action, 
+                message: `The current backend is ${tf.getBackend()}.`,
+                backend: evt.data.backend, 
+                status: + (evt.data.backend != tf.getBackend())});
+        } catch (err){
+            postMessage({action: evt.data.action, 
+                message: err.toString(), 
+                backend: evt.data.backend,
+                status: 1});
+        }
     } else if (evt.data.action === "generate image"){
         let callback = i => {
             postMessage({action: 'progress', 
                          status: 0,
                          currentStep: i});
         }
-
-        let genImg;
-        if (evt.data.mode === 'img2img'){
-            genImg = generateImageImg2Img(evt.data.refImg, evt.data.height, evt.data.width, evt.data.steps, 
-                                          evt.data.guideRatio, evt.data.noiseScale, callback);
-        } else if (evt.data.mode === 'transition') {
-            genImg = generateImageTransition(evt.data.srcImg, evt.data.trgImg, evt.data.height, evt.data.width, 
-                                             evt.data.steps, evt.data.frames, evt.data.noiseScale, callback);
-        }else {
-            genImg = generateImageUncond(evt.data.height, evt.data.width, evt.data.steps, evt.data.noiseScale, callback);
-        }
         
-        postMessage({action: evt.data.action, 
-                     mode: evt.data.mode,
-                     message: `The image with ${genImg.shape[0]}X${genImg.shape[1]} pixels is generated.`, 
-                     status: 0,
-                     image: genImg.arraySync()});
-        genImg.dispose();
+        tf.ready().then(() => {
+            let genImg;
+            if (evt.data.mode === 'img2img'){
+                genImg = generateImageImg2Img(evt.data.refImg, evt.data.height, evt.data.width, evt.data.steps, 
+                                            evt.data.guideRatio, evt.data.noiseScale, callback);
+            } else if (evt.data.mode === 'transition') {
+                genImg = generateImageTransition(evt.data.srcImg, evt.data.trgImg, evt.data.height, evt.data.width, 
+                                                evt.data.steps, evt.data.frames, evt.data.noiseScale, callback);
+            }else {
+                genImg = generateImageUncond(evt.data.height, evt.data.width, evt.data.steps, evt.data.noiseScale, callback);
+            }
+            
+            postMessage({action: evt.data.action, 
+                        mode: evt.data.mode,
+                        message: `The image with ${genImg.shape[0]}X${genImg.shape[1]} pixels is generated.`, 
+                        status: 0,
+                        image: genImg.arraySync()});
+            genImg.dispose();
+        });
     }
 
 	// tf.engine().endScope();

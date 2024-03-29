@@ -51,6 +51,8 @@ let trgImgDraw = new DrawableCanvas(trgImgElem);
 
 
 function initializeDOM(){
+    radioCpuElem.disabled = false;
+    radioGpuElem.disabled = false;
     generateBnElem.disabled = true;
     adjustCanvasShape(canvasElemList, 48, 48);
     refImgDraw.enable();
@@ -243,7 +245,7 @@ radioCpuElem.addEventListener('change', () => {
     if (radioCpuElem.checked){
         globalObj.worker.postMessage({
             action: 'set backend',
-            backend: 'cpu'
+            backend: 'wasm'
         });
     }
 });

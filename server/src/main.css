@@ -51,3 +51,8 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
 }
+
+@font-face {
+    font-family: "DFKai-SB";
+    src: url("./kaiu.ttf");
+}
